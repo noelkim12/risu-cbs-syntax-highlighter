@@ -63,7 +63,7 @@ addFunction({
 
 addFunction({
     name: 'personality',
-    description: '캐릭터의 성격을 반환합니다',
+    description: '캐릭터의 페르소나를 반환합니다',
     aliases: ['char_persona', 'charpersona'],
     arguments: [],
     example: '{{personality}}'

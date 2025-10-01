@@ -81,10 +81,19 @@
 			},
 			"patterns": [
 				{
-					"include": "#cbs-function-call"
+					"include": "#cbs-comment"
+				},
+				{
+					"include": "#cbs-else"
+				},
+				{
+					"include": "#cbs-block-open"
 				},
 				{
 					"include": "#cbs-math-expression"
+				},
+				{
+					"include": "#cbs-function-call"
 				},
 				{
 					"include": "#cbs-block-argument"
@@ -108,7 +117,7 @@
 		},
 		"cbs-block-argument": {
 			"name": "string.unquoted.argument.cbs",
-			"match": "\\s+[^}]+"
+			"match": "\\s+[^{}]+"
 		},
 		"cbs-math-expression": {
 			"name": "meta.math.expression.cbs",
@@ -129,6 +138,15 @@
 			},
 			"patterns": [
 				{
+					"include": "#cbs-comment"
+				},
+				{
+					"include": "#cbs-block-open"
+				},
+				{
+					"include": "#cbs-math-expression"
+				},
+				{
 					"include": "#cbs-function-call"
 				},
 				{
@@ -141,7 +159,7 @@
 		},
 		"cbs-function-call": {
 			"name": "meta.function.call.cbs",
-			"begin": "(\\{\\{)(?![#/?])",
+			"begin": "(\\{\\{)(?![#/?:])",
 			"end": "(\\}\\})",
 			"beginCaptures": {
 				"1": {
@@ -154,6 +172,15 @@
 				}
 			},
 			"patterns": [
+				{
+					"include": "#cbs-comment"
+				},
+				{
+					"include": "#cbs-block-open"
+				},
+				{
+					"include": "#cbs-math-expression"
+				},
 				{
 					"include": "#cbs-function-call"
 				},
@@ -230,6 +257,15 @@
 		},
 		"function-arguments": {
 			"patterns": [
+				{
+					"include": "#cbs-block-open"
+				},
+				{
+					"include": "#cbs-math-expression"
+				},
+				{
+					"include": "#cbs-function-call"
+				},
 				{
 					"include": "#numbers"
 				},

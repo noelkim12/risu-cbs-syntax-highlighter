@@ -2,6 +2,323 @@
 
 Risu AI에서 사용하는 CBS (Curly Braced Syntax) 매크로 스크립트 언어를 위한 완전한 VS Code 확장 프로그램입니다.
 
+## 📦 프로젝트 구조 (Scaffold)
+
+이 확장 프로그램은 다음과 같은 모듈식 구조로 설계되어 있습니다:
+
+```
+risu-formatter/
+├── src/                            # TypeScript 소스 코드
+│   ├── extension.ts                # VS Code 확장 진입점
+│   ├── core/                       # 핵심 CBS 처리 로직 (독립 실행 가능)
+│   │   ├── parser.ts               # CBS 구문 파서
+│   │   ├── formatter.ts            # CBS 코드 포매터
+│   │   └── cbsDatabase.ts          # CBS 함수 메타데이터 데이터베이스 (170+ 함수)
+│   └── providers/                  # VS Code 기능 제공자
+│       ├── hoverProvider.ts        # Hover 툴팁 제공
+│       ├── diagnosticProvider.ts   # 오류 진단 제공
+│       └── foldingProvider.ts      # 코드 접기 제공
+├── syntaxes/                       # TextMate 문법 정의
+│   └── cbs.tmLanguage.json         # CBS 구문 강조 규칙
+├── language-configuration.json     # 언어 편집 설정 (브래킷 매칭 등)
+├── package.json                    # 확장 메타데이터 및 설정
+├── tsconfig.json                   # TypeScript 컴파일러 설정
+└── test.cbs                        # 테스트 파일
+```
+
+### 🔍 주요 소스 코드 설명
+
+#### **`src/extension.ts`** - VS Code 확장 진입점
+
+VS Code 확장의 메인 진입점으로, 모든 기능을 활성화하고 등록합니다.
+
+**주요 역할**:
+- CBS 언어 서비스 초기화
+- 모든 Provider(Hover, Diagnostic, Folding) 등록
+- Document Formatter 등록
+- 사용자 설정 로드 및 적용
+
+**핵심 함수**:
+```typescript
+export function activate(context: vscode.ExtensionContext)
+```
+- 확장이 활성화될 때 호출되어 모든 기능을 초기화합니다
+- `vscode.languages.registerHoverProvider()`: Hover 툴팁 등록
+- `vscode.languages.registerDocumentFormattingEditProvider()`: 포매터 등록
+- `vscode.languages.registerFoldingRangeProvider()`: 코드 접기 등록
+
+#### **`src/core/parser.ts`** - CBS 구문 파서
+
+CBS 코드를 토큰으로 분해하고 블록 트리를 구성하는 핵심 파서입니다.
+
+**주요 역할**:
+- CBS 표현식 토큰화 (`{{function}}`, `{{#if}}`, `{{? math}}`)
+- 중첩된 블록 구조 파싱
+- 구문 오류 감지 및 보고
+- 블록 트리 생성
+
+**핵심 클래스 및 인터페이스**:
+```typescript
+export interface CBSToken {
+    type: 'block-open' | 'block-close' | 'function' | 'math' | 'text';
+    value: string;
+    start: number;
+    end: number;
+    line: number;
+    column: number;
+}
+
+export interface CBSBlock {
+    type: string;              // 블록 타입 (if, when, each 등)
+    start: number;
+    end: number;
+    line: number;
+    children: CBSBlock[];      // 중첩된 자식 블록들
+    parent?: CBSBlock;
+}
+
+export class CBSParser {
+    parse(): { tokens: CBSToken[]; errors: CBSParseError[]; blocks: CBSBlock[] }
+}
+```
+
+**파싱 프로세스**:
+1. **Tokenize**: 텍스트를 한 글자씩 읽으며 `{{`를 만나면 CBS 표현식 감지
+2. **Template Parsing**: 표현식 타입 판별 (`#`, `/`, `?`, 일반 함수)
+3. **Block Tree Building**: 블록 열기/닫기 토큰을 스택으로 매칭하여 트리 구성
+4. **Error Detection**: 닫히지 않은 블록, 불일치하는 블록 등 감지
+
+**중첩 처리**:
+```typescript
+private findClosingBraces(): number
+```
+- 깊이 추적 알고리즘으로 중첩된 `{{}}` 올바르게 매칭
+- 예: `{{#if {{? {{getvar::x}}}}}}`를 올바르게 파싱
+
+#### **`src/core/formatter.ts`** - CBS 코드 포매터
+
+CBS 코드의 들여쓰기와 간격을 자동으로 정리하는 포매터입니다.
+
+**주요 역할**:
+- 블록 구조에 따른 자동 들여쓰기
+- `::` 구분자 주변 공백 정규화
+- 마크다운 구문 보존
+- 중괄호 내부 공백 정리
+
+**핵심 클래스 및 인터페이스**:
+```typescript
+export interface FormatterOptions {
+    indentSize: number;        // 들여쓰기 크기 (스페이스 개수)
+    indentStyle: 'space' | 'tab';
+    preserveMarkdown: boolean; // 마크다운 구문 보존 여부
+    alignArguments: boolean;   // :: 주변 공백 추가 여부
+}
+
+export class CBSFormatter {
+    format(text: string): string
+}
+```
+
+**포맷팅 알고리즘**:
+1. **Parse**: `CBSParser`로 블록 구조 분석
+2. **Line Processing**: 각 줄을 순회하며 들여쓰기 계산
+   - 블록 열기 (`{{#if}}`) 감지 → 다음 줄 들여쓰기 증가
+   - 블록 닫기 (`{{/if}}`) 감지 → 현재 줄 들여쓰기 감소
+3. **Formatting**: 공백 정규화 및 마크다운 보존
+4. **Output**: 포맷팅된 텍스트 반환
+
+**설정 가능한 포맷팅 규칙**:
+- 들여쓰기 스타일 (스페이스/탭)
+- 들여쓰기 크기 (2, 4, 8 등)
+- `::` 구분자 정렬 여부
+- 마크다운 헤더(`#`) 보존 여부
+
+#### **`src/core/cbsDatabase.ts`** - CBS 함수 메타데이터
+
+170개 이상의 CBS 내장 함수에 대한 메타데이터를 관리하는 데이터베이스입니다.
+
+**주요 역할**:
+- 모든 CBS 함수의 이름, 설명, 인자, 예제 저장
+- 함수 별칭 관리 (예: `getvar` = `tempvar`)
+- Hover 툴팁에서 함수 정보 제공
+- 함수 검색 및 조회 API 제공
+
+**핵심 인터페이스**:
+```typescript
+interface CBSFunction {
+    name: string;              // 함수 이름
+    description: string;       // 한글 설명
+    aliases: string[];         // 별칭 목록
+    arguments: string[];       // 인자 목록
+    example: string;          // 사용 예제
+}
+```
+
+**함수 카테고리** (170+ 함수):
+- **데이터 접근**: `char`, `user`, `history`, `lorebook` (20개)
+- **변수**: `getvar`, `setvar`, `tempvar`, `addvar` (8개)
+- **논리 연산**: `equal`, `and`, `or`, `not`, `all`, `any` (12개)
+- **문자열**: `replace`, `split`, `trim`, `upper`, `lower`, `length` (15개)
+- **배열**: `makearray`, `arrayelement`, `arraypush`, `filter` (15개)
+- **객체**: `makedict`, `dictelement`, `object_assert` (10개)
+- **수학**: `calc`, `round`, `pow`, `min`, `max`, `sum` (15개)
+- **시간**: `time`, `date`, `unixtime`, `isotime`, `datetimeformat` (10개)
+- **미디어**: `image`, `audio`, `emotion`, `video`, `bg` (15개)
+- **랜덤**: `random`, `pick`, `roll`, `dice`, `hash` (6개)
+- **암호화**: `xor`, `crypt`, `caesar`, `encrypt`, `decrypt` (8개)
+- **제어**: `hiddenkey`, `trigger_id`, `jb`, `jbtoggled` (4개)
+- **시스템**: `chat_index`, `blank`, `br`, `model`, `maxcontext` (30개)
+- **블록**: `#if`, `#when`, `#each`, `:else`, `#puredisplay`, `//`, `?` (7개)
+
+**함수 조회 API**:
+```typescript
+export function getFunctionInfo(name: string): CBSFunction | undefined
+```
+- 함수 이름 또는 별칭으로 검색
+- 대소문자 구분 없이 조회 가능
+- `#if`, `#when` 등 특수 문자 포함 함수도 지원
+
+#### **`src/providers/hoverProvider.ts`** - Hover 툴팁 제공자
+
+CBS 함수 위에 마우스를 올렸을 때 한글 설명 툴팁을 표시합니다.
+
+**주요 역할**:
+- 커서 위치의 CBS 함수 감지
+- `cbsDatabase.ts`에서 함수 정보 조회
+- 마크다운 형식의 툴팁 생성
+- 특수 문자(`#`, `?`, `::`, `//`) 처리
+
+**핵심 메서드**:
+```typescript
+provideHover(document, position, token): vscode.Hover | null
+```
+1. **Context Detection**: `getCBSContext()` - 커서가 `{{...}}` 내부인지 확인
+2. **Word Extraction**: `getExtendedWordAtPosition()` - 특수 문자 포함 단어 추출
+3. **Function Resolution**: `extractFunctionName()` - CBS 문맥에서 함수명 추출
+4. **Info Retrieval**: `getFunctionInfo()` - 함수 정보 조회
+5. **Tooltip Creation**: `createHoverContent()` - 마크다운 툴팁 생성
+
+**특수 문자 처리**:
+- `{{#if}}` → `#` 감지 후 `"#if"` 반환
+- `{{:else}}` → `:` 감지 후 `"else"` 반환
+- `{{?}}` → `?` 감지 후 `"?"` 반환
+- `{{//}}` → `//` 감지 후 `"//"` 반환
+
+**중첩 표현식 처리**:
+```typescript
+private getCBSContext(line: string, cursorPosition: number): string | null
+```
+- 스택 기반 파서로 중첩된 `{{...}}` 올바르게 감지
+- 예: `{{#if {{? {{getvar::x}}}}}}` → 가장 안쪽 표현식 감지
+
+#### **`src/providers/diagnosticProvider.ts`** - 오류 진단 제공자
+
+CBS 코드의 구문 오류를 실시간으로 감지하고 표시합니다.
+
+**주요 역할**:
+- 파일 저장 또는 변경 시 자동으로 구문 검사
+- `CBSParser`의 오류 정보를 VS Code 진단으로 변환
+- 에디터에 빨간 밑줄과 오류 메시지 표시
+
+**감지하는 오류 유형**:
+1. **닫히지 않은 블록**: `{{#if}}` 후 `{{/if}}` 누락
+2. **블록 불일치**: `{{#if}}...{{/when}}` (열기/닫기 타입 다름)
+3. **예상치 못한 닫기 태그**: `{{/if}}` 앞에 `{{#if}}` 없음
+4. **중괄호 누락**: `{{function::arg` (닫는 `}}` 누락)
+
+**핵심 메서드**:
+```typescript
+updateDiagnostics(document: vscode.TextDocument): void
+```
+1. `CBSParser.parse()` 호출하여 오류 수집
+2. 각 오류를 `vscode.Diagnostic` 객체로 변환
+3. `diagnosticCollection.set()` 호출하여 에디터에 표시
+
+#### **`src/providers/foldingProvider.ts`** - 코드 접기 제공자
+
+CBS 블록 구조를 접고 펼칠 수 있는 기능을 제공합니다.
+
+**주요 역할**:
+- `{{#block}}...{{/block}}` 구조 감지
+- 접기 가능한 영역(Folding Range) 생성
+- 중첩된 블록도 개별 접기 가능
+
+**핵심 메서드**:
+```typescript
+provideFoldingRanges(document: vscode.TextDocument): vscode.FoldingRange[]
+```
+1. `CBSParser.parse()` 호출하여 블록 트리 수집
+2. 각 블록을 `vscode.FoldingRange`로 변환
+3. 중첩된 블록도 재귀적으로 처리
+
+**지원하는 블록 타입**:
+- `{{#if}}...{{/if}}`
+- `{{#when}}...{{/when}}`
+- `{{#each}}...{{/each}}`
+- `{{#puredisplay}}...{{/puredisplay}}`
+- 사용자 정의 블록 `{{#custom}}...{{/custom}}`
+
+#### **`syntaxes/cbs.tmLanguage.json`** - TextMate 문법 정의
+
+VS Code의 문법 강조(Syntax Highlighting)를 위한 TextMate 문법 규칙입니다.
+
+**주요 역할**:
+- CBS 표현식 패턴 매칭
+- 함수, 블록, 연산자 등을 색상으로 구분
+- 중첩 표현식 지원
+- 마크다운 구문 통합
+
+**핵심 패턴**:
+1. **`cbs-comment`**: `{{// 주석}}`
+2. **`cbs-else`**: `{{:else}}`
+3. **`cbs-block-open`**: `{{#function ...}}`
+4. **`cbs-block-close`**: `{{/function}}`
+5. **`cbs-math-expression`**: `{{? 1+2}}`
+6. **`cbs-function-call`**: `{{function::arg1::arg2}}`
+
+**함수 카테고리별 색상**:
+- **데이터 접근**: `entity.name.function.data.cbs`
+- **변수**: `entity.name.function.variable.cbs`
+- **논리 연산**: `entity.name.function.logic.cbs`
+- **문자열**: `entity.name.function.string.cbs`
+- **배열**: `entity.name.function.array.cbs`
+- **시스템**: `entity.name.function.system.cbs`
+
+**중첩 처리**:
+모든 패턴에 재귀적 `patterns` 포함:
+```json
+"patterns": [
+    {"include": "#cbs-comment"},
+    {"include": "#cbs-block-open"},
+    {"include": "#cbs-function-call"}
+]
+```
+
+#### **`language-configuration.json`** - 언어 편집 설정
+
+VS Code 에디터의 CBS 언어 편집 동작을 정의합니다.
+
+**주요 설정**:
+- **Brackets**: `{}`, `[]`, `()` 매칭
+- **Auto-closing Pairs**: `{{` 입력 시 자동으로 `}}` 추가
+- **Surrounding Pairs**: 텍스트 선택 후 `{` 입력 시 `{...}` 감싸기
+- **Comments**: `//`, `/* */` (주: CBS는 `{{//}}`를 사용하므로 이 설정은 참고용)
+
+**브래킷 설정**:
+```json
+{
+    "brackets": [
+        ["{", "}"],
+        ["[", "]"],
+        ["(", ")"]
+    ],
+    "autoClosingPairs": [
+        { "open": "{{", "close": "}}" },
+        { "open": "{", "close": "}" }
+    ]
+}
+```
+
 ## 주요 기능
 
 ### 🎨 문법 강조 (Syntax Highlighting)
@@ -252,23 +569,6 @@ vsce package
 
 ## 개발
 
-### 파일 구조
-
-```
-risu-formatter/
-├── src/
-│   ├── extension.ts          # VS Code 확장 진입점
-│   └── core/
-│       ├── parser.ts          # CBS 파서 (독립 실행 가능)
-│       └── formatter.ts       # CBS 포매터 (독립 실행 가능)
-├── syntaxes/
-│   └── cbs.tmLanguage.json   # TextMate 문법 정의
-├── language-configuration.json  # 언어 설정
-├── package.json              # 확장 메타데이터
-├── tsconfig.json             # TypeScript 설정
-└── test.cbs                  # 테스트 파일
-```
-
 ### 빌드 명령어
 
 ```bash
@@ -282,8 +582,18 @@ npm run compile
 npm run watch
 
 # 패키지 생성
+npm run package
+# 또는
 vsce package
 ```
+
+### 개발 워크플로우
+
+1. **코드 수정**: `src/` 디렉토리에서 TypeScript 코드 수정
+2. **컴파일**: `npm run compile` 또는 `npm run watch`로 자동 컴파일
+3. **테스트**: `F5`로 Extension Development Host 실행
+4. **디버깅**: VS Code 디버거를 사용하여 브레이크포인트 설정
+5. **패키징**: `npm run package`로 VSIX 파일 생성
 
 ## 독립 실행 모드 (웹에서 사용)
 
@@ -308,25 +618,53 @@ const formatted = formatter.format(text);
 
 ## 알려진 제한사항
 
-- 언어 설정에 포함된 주석 문법 (`// `, `/* */`)은 템플릿에서 상속된 것으로, CBS는 전통적인 주석을 사용하지 않습니다
-- 매우 깊게 중첩된 표현식 (10단계 이상)은 문법 강조에 문제가 있을 수 있습니다
+- `language-configuration.json`에 포함된 주석 문법 (`//`, `/* */`)은 일반적인 프로그래밍 언어 템플릿에서 상속된 것으로, CBS는 `{{//}}` 형식의 주석을 사용합니다
+- 매우 깊게 중첩된 표현식 (15단계 이상)은 TextMate 문법 엔진의 한계로 문법 강조가 제한될 수 있습니다
+- 파서는 중첩 제한이 없지만, 실시간 문법 강조는 성능을 위해 재귀 깊이가 제한되어 있습니다
 
 ## 향후 계획
 
-- IntelliSense 지원 (함수 이름 자동완성)
-- 일반적인 CBS 패턴을 위한 스니펫 라이브러리
-- 함수 시그니처 도움말
+- **IntelliSense 지원**: 함수 이름 자동완성 (Completion Provider)
+- **스니펫 라이브러리**: 일반적인 CBS 패턴을 위한 코드 스니펫
+- **함수 시그니처 도움말**: 함수 입력 시 인자 힌트 (Signature Help)
+- **정의로 이동**: 변수 정의 위치로 점프 (Definition Provider)
+- **참조 찾기**: 변수/함수 사용 위치 검색 (References Provider)
+- **리팩토링**: 변수/함수 이름 일괄 변경 (Rename Provider)
+
+## 기술 스택
+
+- **언어**: TypeScript 5.0+
+- **런타임**: Node.js 18+
+- **프레임워크**: VS Code Extension API 1.85.0+
+- **문법 정의**: TextMate Grammar (JSON)
+- **빌드 도구**: TypeScript Compiler, VS Code Extension Manager (vsce)
 
 ## 기여
 
 이 확장은 Risu AI 커뮤니티를 위해 개발되었습니다. 기여를 환영합니다!
 
+### 기여 방법
+
+1. **이슈 보고**: GitHub Issues에 버그 리포트 또는 기능 제안
+2. **Pull Request**: 코드 개선 또는 새 기능 구현
+3. **문서 개선**: README, 코드 주석, 예제 추가
+4. **테스트**: 다양한 CBS 코드로 확장 테스트 및 피드백
+
+### 개발 가이드
+
+- **코드 스타일**: TypeScript 표준 스타일 가이드 준수
+- **주석**: 모든 public API에 JSDoc 주석 (한글) 작성
+- **테스트**: 새 기능에 대한 테스트 케이스 추가
+- **커밋**: 명확한 커밋 메시지 작성 (한글/영문 모두 가능)
+
 ## 라이선스
 
-MIT License
+MIT License - 자유롭게 사용, 수정, 배포 가능
 
 ---
 
 **개발자**: Noel Kim
-**버전**: 1.0  
-**최종 업데이트**: 2025년 10월 1일
+**버전**: 1.0.0
+**최종 업데이트**: 2025년 10월 2일
+**GitHub**: [risu-formatter](https://github.com/yourusername/risu-formatter)
+**VS Code Marketplace**: Coming Soon

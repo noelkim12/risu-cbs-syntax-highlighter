@@ -146,3 +146,4 @@ dist
 docs/
 CLAUDE.md
 .claude/
+*.vsix
