@@ -1,0 +1,74 @@
+{
+  "name": "cbs",
+  "displayName": "risu-cbs-syntax-highlighter",
+  "description": "CBS custom syntax highlighting and formatter support",
+  "version": "1.0.0",
+  "publisher": "noelkim12",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Formatters"
+  ],
+  "activationEvents": [
+    "onLanguage:cbs"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [{
+      "id": "cbs",
+      "aliases": ["CBS", "cbs"],
+      "extensions": [".cbs"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "cbs",
+      "scopeName": "source.cbs",
+      "path": "./syntaxes/cbs.tmLanguage.json"
+    }],
+    "configuration": {
+      "title": "CBS Language Support",
+      "properties": {
+        "cbs.formatter.indentSize": {
+          "type": "number",
+          "default": 4,
+          "description": "들여쓰기에 사용할 스페이스 개수"
+        },
+        "cbs.formatter.indentStyle": {
+          "type": "string",
+          "enum": ["space", "tab"],
+          "default": "space",
+          "description": "들여쓰기 스타일"
+        },
+        "cbs.formatter.preserveMarkdown": {
+          "type": "boolean",
+          "default": true,
+          "description": "마크다운 포맷 유지"
+        },
+        "cbs.formatter.alignArguments": {
+          "type": "boolean",
+          "default": false,
+          "description": ":: 인자 구분자 주변에 공백 추가"
+        },
+        "cbs.hover.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "CBS 함수에 마우스를 올렸을 때 한글 설명 툴팁 표시"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.3.0"
+  }
+}

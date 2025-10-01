@@ -1,0 +1,69 @@
+# Test CBS File
+
+## Hover 테스트
+마우스를 아래 함수들 위에 올려보세요!
+
+### 데이터 접근 함수
+{{char}} - 캐릭터 이름
+{{user}} - 사용자 이름
+{{personality}} - 캐릭터 페르소나
+{{lorebook}} - 로어북 정보
+
+### 변수 함수
+{{getvar::score}} - 변수 가져오기
+{{setvar::score::100}} - 변수 설정
+{{tempvar::myvar}} - 임시 변수
+{{getglobalvar::total}} - 전역 변수
+
+### 논리 함수
+{{equal::1::1}} - 같은지 확인
+{{greater::5::3}} - 크기 비교
+{{and::1::1}} - 논리 AND
+{{or::0::1}} - 논리 OR
+
+### 문자열 함수
+{{upper::hello}} - 대문자 변환
+{{lower::WORLD}} - 소문자 변환
+{{replace::hello::l::r}} - 문자열 대체
+{{split::a,b,c::,}} - 문자열 분할
+
+### 배열 함수
+{{makearray::a::b::c}} - 배열 생성
+{{arrayelement::[1,2,3]::0}} - 배열 요소 가져오기
+{{arraypush::[a,b]::c}} - 배열에 추가
+
+### 수학 함수
+{{calc::2+2}} - 계산
+{{round::3.7}} - 반올림
+{{pow::2::3}} - 거듭제곱
+
+### 시간 함수
+{{time}} - 현재 시간
+{{date}} - 현재 날짜
+{{unixtime}} - 유닉스 시간
+
+### 랜덤 함수
+{{random::a::b::c}} - 랜덤 선택
+{{roll::6}} - 주사위 굴리기
+{{dice::2d6}} - 주사위 표기법
+## 중첩된 함수 테스트
+{{#if {{? {{getglobalvar::toggle_response_mode}}<3}}}}
+{{#if {{? {{lastmessageid}}>=8}}}} 
+  중첩된 블록 내부
+  {{random::{{char}}::{{user}}}} - 중첩된 랜덤
+{{/if}}
+{{/if}}
+
+## Math expression
+{{? 1 + 2 * 6}}
+{{? {{getvar::count}} > 5}}
+
+{{#each array}}...{{/each}} or {{#each object as key}}... {{slot::key}}...{{/each}}
+
+# Error cases (should be highlighted)
+
+{{#if unclosed block
+
+{{getvar::test - missing close braces
+
+{{/if}} - unmatched close tag
