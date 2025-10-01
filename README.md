@@ -314,11 +314,8 @@ const formatted = formatter.format(text);
 ## 향후 계획
 
 - IntelliSense 지원 (함수 이름 자동완성)
-- 함수 호버 문서
 - 일반적인 CBS 패턴을 위한 스니펫 라이브러리
 - 함수 시그니처 도움말
-- 심볼 이름 변경 지원
-- 변수 정의로 이동 기능
 
 ## 기여
 
