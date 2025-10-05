@@ -2,7 +2,7 @@
   "name": "cbs",
   "displayName": "risu-cbs-syntax-highlighter",
   "description": "CBS custom syntax highlighting and formatter support",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "noelkim12",
   "engines": {
     "vscode": "^1.80.0"

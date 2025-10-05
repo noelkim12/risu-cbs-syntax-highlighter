@@ -1,0 +1,8 @@
+{
+  "cbs.formatter.indentSize": 2,
+  "cbs.formatter.indentStyle": "space",
+  "cbs.formatter.preserveMarkdown": true,
+  "cbs.formatter.alignArguments": false,
+  "cbs.hover.enabled": true,
+  "editor.formatOnSave": true // 저장 시 자동 포맷팅
+}

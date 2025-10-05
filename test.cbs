@@ -8,13 +8,14 @@
 {{user}} - 사용자 이름
 {{personality}} - 캐릭터 페르소나
 {{lorebook}} - 로어북 정보
+{{getvar::calc::}}}}}}
 
 ### 변수 함수
 {{getvar::score}} - 변수 가져오기
 {{setvar::score::100}} - 변수 설정
 {{tempvar::myvar}} - 임시 변수
 {{getglobalvar::total}} - 전역 변수
-
+ 
 ### 논리 함수
 {{equal::1::1}} - 같은지 확인
 {{greater::5::3}} - 크기 비교
@@ -43,15 +44,16 @@
 {{unixtime}} - 유닉스 시간
 
 ### 랜덤 함수
-{{random::a::b::c }} - 랜덤 선택
+{{random::a::b::c}} - 랜덤 선택
 {{roll::6}} - 주사위 굴리기
 {{dice::2d6}} - 주사위 표기법
 ## 중첩된 함수 테스트
 {{#if {{? {{getglobalvar::toggle_response_mode}}<3}}}}
-{{#if {{? {{lastmessageid}}>=8}}}} 
-  중첩된 블록 내부
-  {{random::{{char}}::{{user}}}} - 중첩된 랜덤
-{{/if}}
+  {{#if {{? {{lastmessageid}}>=8}}}}
+    중첩된 블록 내부
+    qweasdfqwe
+    {{random::{{char}}::{{user}}}} - 중첩된 랜덤
+  {{/if}}
 {{/if}}
 
 ## Math expression
@@ -59,11 +61,3 @@
 {{? {{getvar::count}} > 5}}
 
 {{#each array}}...{{/each}} or {{#each object as key}}... {{slot::key}}...{{/each}}
-
-# Error cases (should be highlighted)
-
-{{#if unclosed block
-
-{{getvar::test - missing close braces
-
-{{/if}} - unmatched close tag

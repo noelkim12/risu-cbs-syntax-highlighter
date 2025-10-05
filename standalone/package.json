@@ -1,0 +1,16 @@
+{
+  "name": "standalone",
+  "version": "1.0.0",
+  "description": "CBS (Curly Braced Syntax) 에디터를 HTML textarea에서 바로 사용할 수 있는 순수 JavaScript 라이브러리입니다.",
+  "main": "build.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "terser": "^5.44.0"
+  }
+}

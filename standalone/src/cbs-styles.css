@@ -1,0 +1,159 @@
+/**
+ * CBS Editor Styles
+ * Styling for autocomplete dropdown and other UI elements
+ */
+
+/* Autocomplete Dropdown */
+.cbs-autocomplete-dropdown {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-size: 13px;
+}
+
+.cbs-autocomplete-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.15s ease;
+}
+
+.cbs-autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.cbs-autocomplete-item:hover {
+  background-color: #f5f5f5;
+}
+
+.cbs-autocomplete-item.selected {
+  background-color: #0078d4;
+  color: white;
+}
+
+.cbs-autocomplete-item.selected .cbs-autocomplete-detail {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.cbs-autocomplete-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.cbs-autocomplete-label strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cbs-block-badge {
+  display: inline-block;
+  background: #ff6b9d;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 3px;
+  line-height: 1;
+}
+
+.cbs-autocomplete-item.selected .cbs-block-badge {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.cbs-args {
+  font-size: 12px;
+  color: #666;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+.cbs-autocomplete-item.selected .cbs-args {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.cbs-autocomplete-detail {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Signature Help Tooltip */
+.cbs-signature-tooltip {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  background: white;
+  color: #333;
+}
+
+.cbs-signature-main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cbs-signature-label {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.cbs-func-name {
+  color: #0078d4;
+  font-weight: 600;
+}
+
+.cbs-param {
+  color: #666;
+}
+
+.cbs-active-param {
+  color: #0078d4;
+  font-weight: bold;
+  background: #e7f3ff;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.cbs-signature-doc {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+  padding-top: 6px;
+  border-top: 1px solid #e0e0e0;
+  white-space: pre-line;
+}
+
+.cbs-param-doc {
+  font-size: 12px;
+  color: #333;
+  line-height: 1.4;
+  padding: 6px 8px;
+  background: #f5f5f5;
+  border-radius: 3px;
+  border-left: 3px solid #0078d4;
+}
+
+.cbs-param-doc strong {
+  color: #0078d4;
+}
+
+/* Scrollbar styling for autocomplete dropdown */
+.cbs-autocomplete-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cbs-autocomplete-dropdown::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.cbs-autocomplete-dropdown::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.cbs-autocomplete-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

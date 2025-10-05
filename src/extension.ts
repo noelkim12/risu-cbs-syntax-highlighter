@@ -8,18 +8,26 @@
  * - 오류 진단 (Diagnostics) - 실시간 구문 오류 감지
  * - Hover 툴팁 (Hover Provider) - 함수 정보 표시
  * - 코드 접기 (Folding Ranges) - 블록 구조 접기/펼치기
+ * - 자동완성 (IntelliSense) - CBS 함수 자동완성
+ * - 시그니처 도움말 (Signature Help) - 함수 인자 힌트 표시
  */
 
 import * as vscode from 'vscode';
 import { CBSFormatter } from './core/formatter';
 import { CBSParser } from './core/parser';
 import { CBSHoverProvider } from './providers/hoverProvider';
+import { CBSCompletionProvider } from './providers/completionProvider';
+import { CBSSignatureProvider } from './providers/signatureProvider';
+import { CBSBracketPairHighlighter } from './providers/bracketPairProvider';
 
 /** 진단 정보를 수집하는 컬렉션 */
 let diagnosticCollection: vscode.DiagnosticCollection;
 
 /** Hover Provider의 Disposable 객체 (설정 변경 시 재등록을 위해) */
 let hoverProviderDisposable: vscode.Disposable | null = null;
+
+/** Bracket Pair Highlighter 인스턴스 */
+let bracketHighlighter: CBSBracketPairHighlighter | null = null;
 
 /**
  * 확장이 활성화될 때 호출됩니다
@@ -100,6 +108,62 @@ export function activate(context: vscode.ExtensionContext) {
             }
         })
     );
+
+    // 자동완성 (IntelliSense) 제공자 등록
+    // 트리거 문자: { ({{ 입력 시), # ({{# 입력 시), : (:: 입력 시)
+    context.subscriptions.push(
+        vscode.languages.registerCompletionItemProvider(
+            'cbs',
+            new CBSCompletionProvider(),
+            '{', '#', ':'
+        )
+    );
+
+    // 시그니처 도움말 제공자 등록
+    // 트리거 문자: : (:: 입력 시 함수 인자 힌트 표시)
+    context.subscriptions.push(
+        vscode.languages.registerSignatureHelpProvider(
+            'cbs',
+            new CBSSignatureProvider(),
+            ':', ':'
+        )
+    );
+
+    // CBS 중괄호 쌍 하이라이터 초기화
+    bracketHighlighter = new CBSBracketPairHighlighter();
+
+    // 활성 에디터 변경 시 하이라이트 업데이트
+    context.subscriptions.push(
+        vscode.window.onDidChangeActiveTextEditor(editor => {
+            if (editor && bracketHighlighter) {
+                bracketHighlighter.updateActiveEditor(editor);
+            }
+        })
+    );
+
+    // 문서 내용 변경 시 하이라이트 업데이트
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeTextDocument(event => {
+            const editor = vscode.window.activeTextEditor;
+            if (editor && event.document === editor.document && bracketHighlighter) {
+                bracketHighlighter.updateActiveEditor(editor);
+            }
+        })
+    );
+
+    // 커서 위치 변경 시 현재 중괄호 쌍 하이라이트
+    context.subscriptions.push(
+        vscode.window.onDidChangeTextEditorSelection(event => {
+            if (event.textEditor && bracketHighlighter) {
+                bracketHighlighter.updateActiveEditor(event.textEditor);
+            }
+        })
+    );
+
+    // 현재 활성 에디터에 대해 즉시 하이라이트 적용
+    if (vscode.window.activeTextEditor && bracketHighlighter) {
+        bracketHighlighter.updateActiveEditor(vscode.window.activeTextEditor);
+    }
 }
 
 /**
@@ -267,5 +331,10 @@ export function deactivate() {
     // Hover Provider 해제
     if (hoverProviderDisposable) {
         hoverProviderDisposable.dispose();
+    }
+
+    // Bracket Highlighter 해제
+    if (bracketHighlighter) {
+        bracketHighlighter.dispose();
     }
 }
