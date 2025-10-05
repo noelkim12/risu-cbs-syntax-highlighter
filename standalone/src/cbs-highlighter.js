@@ -10,12 +10,12 @@ class CBSHighlighter {
     this.overlay = null;
     // Slightly darker colors for better visibility without borders
     this.colors = [
-      '#FFD70033', // Gold - 20% opacity
-      '#FF6B9D33', // Pink - 20% opacity
-      '#4EC9B033', // Cyan - 20% opacity
-      '#C586C033', // Purple - 20% opacity
-      '#569CD633', // Blue - 20% opacity
-      '#CE917833'  // Orange - 20% opacity
+      "#FFD70066", // Gold - 20% opacity
+      "#FF6B9D66", // Pink - 20% opacity
+      "#4EC9B066", // Cyan - 20% opacity
+      "#C586C066", // Purple - 20% opacity
+      "#569CD666", // Blue - 20% opacity
+      "#CE917866", // Orange - 20% opacity
     ];
 
     this.initialize();
@@ -26,8 +26,8 @@ class CBSHighlighter {
     const textareaStyles = window.getComputedStyle(this.textarea);
 
     // Create container
-    this.container = document.createElement('div');
-    this.container.className = 'cbs-highlighter-container';
+    this.container = document.createElement("div");
+    this.container.className = "cbs-highlighter-container";
     this.container.style.cssText = `
       position: relative;
       display: inline-block;
@@ -35,8 +35,8 @@ class CBSHighlighter {
     `;
 
     // Create backdrop (for rendering highlighted text)
-    this.overlay = document.createElement('div');
-    this.overlay.className = 'cbs-highlighter-overlay';
+    this.overlay = document.createElement("div");
+    this.overlay.className = "cbs-highlighter-overlay";
     this.overlay.style.cssText = `
       position: absolute;
       top: 0;
@@ -63,14 +63,15 @@ class CBSHighlighter {
 
     // Store original styles
     this.originalTextareaColor = textareaStyles.color;
+    this.originalTextareaCaretColor = textareaStyles.caretColor;
     this.originalBackground = textareaStyles.backgroundColor;
 
     // Make textarea text invisible but keep caret/selection visible
-    this.textarea.style.position = 'relative';
-    this.textarea.style.background = 'transparent';
-    this.textarea.style.zIndex = '2';
-    this.textarea.style.color = 'transparent';
-    this.textarea.style.caretColor = this.originalTextareaColor;
+    this.textarea.style.position = "relative";
+    this.textarea.style.background = "transparent";
+    this.textarea.style.zIndex = "2";
+    this.textarea.style.color = "transparent";
+    this.textarea.style.caretColor = this.originalTextareaCaretColor;
     // Selection color remains visible (browser default)
 
     // Add original background to container
@@ -80,8 +81,8 @@ class CBSHighlighter {
     this.syncStyles();
 
     // Bind events
-    this.textarea.addEventListener('scroll', () => this.syncScroll());
-    window.addEventListener('resize', () => this.syncStyles());
+    this.textarea.addEventListener("scroll", () => this.syncScroll());
+    window.addEventListener("resize", () => this.syncStyles());
   }
 
   syncStyles() {
@@ -108,8 +109,8 @@ class CBSHighlighter {
     this.overlay.style.borderRightWidth = textareaStyles.borderRightWidth;
     this.overlay.style.borderBottomWidth = textareaStyles.borderBottomWidth;
     this.overlay.style.borderLeftWidth = textareaStyles.borderLeftWidth;
-    this.overlay.style.borderStyle = 'solid';
-    this.overlay.style.borderColor = 'transparent';
+    this.overlay.style.borderStyle = "solid";
+    this.overlay.style.borderColor = "transparent";
   }
 
   syncScroll() {
@@ -126,7 +127,7 @@ class CBSHighlighter {
       return;
     }
 
-    let html = '';
+    let html = "";
     let lastIndex = 0;
 
     // Sort pairs by start position
@@ -139,13 +140,13 @@ class CBSHighlighter {
         start: pair.openStart,
         end: pair.openEnd,
         level: pair.level,
-        type: 'open'
+        type: "open",
       });
       ranges.push({
         start: pair.closeStart,
         end: pair.closeEnd,
         level: pair.level,
-        type: 'close'
+        type: "close",
       });
     }
 
@@ -162,7 +163,9 @@ class CBSHighlighter {
       // Add highlighted bracket (no border to avoid width changes)
       const colorIndex = range.level % this.colors.length;
       const bracketText = text.substring(range.start, range.end);
-      html += `<span style="background-color: ${this.colors[colorIndex]}; border-radius: 2px;">${this.renderText(bracketText)}</span>`;
+      html += `<span style="background-color: ${
+        this.colors[colorIndex]
+      }; border-radius: 2px;">${this.renderText(bracketText)}</span>`;
 
       lastIndex = range.end;
     }
@@ -183,11 +186,11 @@ class CBSHighlighter {
 
   escapeHTML(text) {
     return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   destroy() {
@@ -197,16 +200,16 @@ class CBSHighlighter {
       parent.removeChild(this.container);
 
       // Restore original textarea styles
-      this.textarea.style.background = '';
-      this.textarea.style.position = '';
-      this.textarea.style.zIndex = '';
-      this.textarea.style.color = '';
-      this.textarea.style.caretColor = '';
+      this.textarea.style.background = "";
+      this.textarea.style.position = "";
+      this.textarea.style.zIndex = "";
+      this.textarea.style.color = "";
+      this.textarea.style.caretColor = "";
     }
   }
 }
 
 // Export to global scope
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.CBSHighlighter = CBSHighlighter;
 }

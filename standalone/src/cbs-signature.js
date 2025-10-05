@@ -10,13 +10,18 @@ class CBSSignature {
     this.isVisible = false;
     this.currentSignature = null;
 
+    // Bind event handlers
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleDocumentClick = this.handleDocumentClick.bind(this);
+    this.handleCursorChange = this.handleCursorChange.bind(this);
+
     this.initialize();
   }
 
   initialize() {
     // Create tooltip element
-    this.tooltip = document.createElement('div');
-    this.tooltip.className = 'cbs-signature-tooltip';
+    this.tooltip = document.createElement("div");
+    this.tooltip.className = "cbs-signature-tooltip";
     this.tooltip.style.cssText = `
       position: absolute;
       display: none;
@@ -36,9 +41,18 @@ class CBSSignature {
     document.body.appendChild(this.tooltip);
 
     // Prevent tooltip from stealing focus
-    this.tooltip.addEventListener('mousedown', (e) => {
+    this.tooltip.addEventListener("mousedown", (e) => {
       e.preventDefault();
     });
+
+    // Add event listeners for closing signature help
+    document.addEventListener("keydown", this.handleKeyDown);
+    document.addEventListener("click", this.handleDocumentClick);
+
+    // Add event listeners for cursor movement detection
+    this.textarea.addEventListener("keyup", this.handleCursorChange);
+    this.textarea.addEventListener("click", this.handleCursorChange);
+    this.textarea.addEventListener("input", this.handleCursorChange);
   }
 
   /**
@@ -73,7 +87,7 @@ class CBSSignature {
     const beforeCursor = text.substring(0, position);
 
     // Find the nearest {{ before cursor
-    const lastOpenIndex = beforeCursor.lastIndexOf('{{');
+    const lastOpenIndex = beforeCursor.lastIndexOf("{{");
 
     if (lastOpenIndex === -1) {
       return null;
@@ -81,7 +95,7 @@ class CBSSignature {
 
     // Check if we're still inside CBS (no closing }} after {{)
     const afterOpen = text.substring(lastOpenIndex, position);
-    const hasClosing = afterOpen.includes('}}');
+    const hasClosing = afterOpen.includes("}}");
 
     if (hasClosing) {
       return null;
@@ -91,10 +105,13 @@ class CBSSignature {
     let cbsContent = afterOpen.substring(2); // Remove {{
 
     // Remove special prefixes (#, /, :)
-    cbsContent = cbsContent.replace(/^[#/:]+/, '');
+    cbsContent = cbsContent.replace(/^[#/:]+/, "");
 
     // Handle nested function calls by finding the innermost one
-    const nestedContext = this.findInnermostFunction(cbsContent, position - lastOpenIndex - 2);
+    const nestedContext = this.findInnermostFunction(
+      cbsContent,
+      position - lastOpenIndex - 2
+    );
 
     if (nestedContext) {
       return nestedContext;
@@ -114,11 +131,15 @@ class CBSSignature {
     let lastOpenPos = -1;
 
     for (let i = 0; i < Math.min(text.length, cursorPos); i++) {
-      if (i < text.length - 1 && text[i] === '{' && text[i + 1] === '{') {
+      if (i < text.length - 1 && text[i] === "{" && text[i + 1] === "{") {
         lastOpenPos = i;
         depth++;
         i++; // Skip next {
-      } else if (i < text.length - 1 && text[i] === '}' && text[i + 1] === '}') {
+      } else if (
+        i < text.length - 1 &&
+        text[i] === "}" &&
+        text[i + 1] === "}"
+      ) {
         depth--;
         i++; // Skip next }
       }
@@ -130,10 +151,13 @@ class CBSSignature {
       const nestedCursorPos = cursorPos - lastOpenPos - 2;
 
       // Remove special prefixes
-      const cleanedContent = nestedContent.replace(/^[#/:]+/, '');
+      const cleanedContent = nestedContent.replace(/^[#/:]+/, "");
       const prefixLength = nestedContent.length - cleanedContent.length;
 
-      return this.parseFunctionCall(cleanedContent, nestedCursorPos - prefixLength);
+      return this.parseFunctionCall(
+        cleanedContent,
+        nestedCursorPos - prefixLength
+      );
     }
 
     return null;
@@ -144,7 +168,7 @@ class CBSSignature {
    */
   parseFunctionCall(cbsContent, cursorPos) {
     // Find the first :: separator
-    const firstSeparator = cbsContent.indexOf('::');
+    const firstSeparator = cbsContent.indexOf("::");
 
     if (firstSeparator === -1) {
       // No separator yet, might be typing function name
@@ -167,7 +191,7 @@ class CBSSignature {
       functionName,
       argumentText,
       cursorPositionInArgs,
-      argumentCount
+      argumentCount,
     };
   }
 
@@ -176,7 +200,7 @@ class CBSSignature {
    * Each :: separator adds one argument
    */
   countArguments(argumentText) {
-    if (argumentText.trim() === '') {
+    if (argumentText.trim() === "") {
       return 0;
     }
 
@@ -185,13 +209,17 @@ class CBSSignature {
     let depth = 0;
 
     for (let i = 0; i < argumentText.length - 1; i++) {
-      if (argumentText[i] === '{' && argumentText[i + 1] === '{') {
+      if (argumentText[i] === "{" && argumentText[i + 1] === "{") {
         depth++;
         i++; // Skip next {
-      } else if (argumentText[i] === '}' && argumentText[i + 1] === '}') {
+      } else if (argumentText[i] === "}" && argumentText[i + 1] === "}") {
         depth--;
         i++; // Skip next }
-      } else if (depth === 0 && argumentText[i] === ':' && argumentText[i + 1] === ':') {
+      } else if (
+        depth === 0 &&
+        argumentText[i] === ":" &&
+        argumentText[i + 1] === ":"
+      ) {
         count++;
         i++; // Skip next :
       }
@@ -213,13 +241,13 @@ class CBSSignature {
    * Build signature information from function info
    */
   buildSignatureInfo(functionInfo, activeParameter) {
-    const parameters = functionInfo.arguments.map(arg => ({
+    const parameters = functionInfo.arguments.map((arg) => ({
       label: arg,
-      documentation: this.getParameterDocumentation(functionInfo.name, arg)
+      documentation: this.getParameterDocumentation(functionInfo.name, arg),
     }));
 
     // Build signature label: "functionName(param1, param2, param3)"
-    const paramLabels = functionInfo.arguments.join(', ');
+    const paramLabels = functionInfo.arguments.join(", ");
     const label = `${functionInfo.name}(${paramLabels})`;
 
     // Ensure activeParameter doesn't exceed parameter count
@@ -229,7 +257,7 @@ class CBSSignature {
       label,
       documentation: this.formatFunctionDocumentation(functionInfo),
       parameters,
-      activeParameter: Math.max(0, safeActiveParam)
+      activeParameter: Math.max(0, safeActiveParam),
     };
   }
 
@@ -239,49 +267,49 @@ class CBSSignature {
   getParameterDocumentation(functionName, paramName) {
     // Common parameter descriptions
     const commonDescriptions = {
-      'name': '변수 또는 항목의 이름',
-      'value': '설정할 값',
-      'string': '문자열 값',
-      'target': '찾을 대상 문자열',
-      'replacement': '대체할 문자열',
-      'array': '배열 또는 리스트',
-      'index': '배열 인덱스 (0부터 시작)',
-      'condition': '조건식 (1 또는 true가 참)',
-      'expression': '수학 표현식',
-      'format': '날짜/시간 형식 문자열',
-      'timestamp': '유닉스 타임스탬프',
-      'a': '첫 번째 값',
-      'b': '두 번째 값',
-      'delimiter': '구분자 문자열',
-      'arg1': '첫 번째 인자',
-      'arg2': '두 번째 인자',
-      'arg3': '세 번째 인자',
-      'number': '숫자 값',
-      'min': '최소값',
-      'max': '최대값',
-      'start': '시작 위치',
-      'end': '끝 위치',
-      'key': '키 이름',
-      'prefix': '접두사 문자열',
-      'suffix': '접미사 문자열',
-      'substring': '부분 문자열',
-      'base': '밑수',
-      'exponent': '지수',
-      'decimals': '소수점 자리수',
-      'NdM': '주사위 표기법 (예: 2d6)',
-      'hex': '16진수 값',
-      'code': '유니코드 코드',
-      'size': '크기 값',
-      'label': '레이블 텍스트',
-      'action': '실행할 동작',
-      'text': '텍스트 내용',
-      'operator': '연산자 (and, or, is, not 등)',
-      'namespace': '네임스페이스 또는 모듈 이름',
-      'type': '타입 또는 종류',
-      'dict': '딕셔너리/객체',
-      'json': 'JSON 데이터',
-      'key1': '첫 번째 키',
-      'key2': '두 번째 키'
+      name: "변수 또는 항목의 이름",
+      value: "설정할 값",
+      string: "문자열 값",
+      target: "찾을 대상 문자열",
+      replacement: "대체할 문자열",
+      array: "배열 또는 리스트",
+      index: "배열 인덱스 (0부터 시작)",
+      condition: "조건식 (1 또는 true가 참)",
+      expression: "수학 표현식",
+      format: "날짜/시간 형식 문자열",
+      timestamp: "유닉스 타임스탬프",
+      a: "첫 번째 값",
+      b: "두 번째 값",
+      delimiter: "구분자 문자열",
+      arg1: "첫 번째 인자",
+      arg2: "두 번째 인자",
+      arg3: "세 번째 인자",
+      number: "숫자 값",
+      min: "최소값",
+      max: "최대값",
+      start: "시작 위치",
+      end: "끝 위치",
+      key: "키 이름",
+      prefix: "접두사 문자열",
+      suffix: "접미사 문자열",
+      substring: "부분 문자열",
+      base: "밑수",
+      exponent: "지수",
+      decimals: "소수점 자리수",
+      NdM: "주사위 표기법 (예: 2d6)",
+      hex: "16진수 값",
+      code: "유니코드 코드",
+      size: "크기 값",
+      label: "레이블 텍스트",
+      action: "실행할 동작",
+      text: "텍스트 내용",
+      operator: "연산자 (and, or, is, not 등)",
+      namespace: "네임스페이스 또는 모듈 이름",
+      type: "타입 또는 종류",
+      dict: "딕셔너리/객체",
+      json: "JSON 데이터",
+      key1: "첫 번째 키",
+      key2: "두 번째 키",
     };
 
     return commonDescriptions[paramName] || `${paramName} 인자`;
@@ -328,7 +356,8 @@ class CBSSignature {
       return;
     }
 
-    const { label, documentation, parameters, activeParameter } = this.currentSignature;
+    const { label, documentation, parameters, activeParameter } =
+      this.currentSignature;
 
     // Build HTML
     let html = '<div class="cbs-signature-main">';
@@ -337,40 +366,46 @@ class CBSSignature {
     html += '<div class="cbs-signature-label">';
 
     // Parse the label to highlight active parameter
-    const funcNameEnd = label.indexOf('(');
+    const funcNameEnd = label.indexOf("(");
     const funcName = label.substring(0, funcNameEnd);
     const paramsText = label.substring(funcNameEnd + 1, label.length - 1);
-    const params = paramsText.split(', ');
+    const params = paramsText.split(", ");
 
     html += `<span class="cbs-func-name">${this.escapeHTML(funcName)}</span>(`;
 
     params.forEach((param, i) => {
-      if (i > 0) html += ', ';
+      if (i > 0) html += ", ";
       if (i === activeParameter) {
-        html += `<span class="cbs-active-param">${this.escapeHTML(param)}</span>`;
+        html += `<span class="cbs-active-param">${this.escapeHTML(
+          param
+        )}</span>`;
       } else {
         html += `<span class="cbs-param">${this.escapeHTML(param)}</span>`;
       }
     });
 
-    html += ')';
-    html += '</div>';
+    html += ")";
+    html += "</div>";
 
     // Function documentation
     if (documentation) {
-      html += `<div class="cbs-signature-doc">${this.escapeHTML(documentation)}</div>`;
+      html += `<div class="cbs-signature-doc">${this.escapeHTML(
+        documentation
+      )}</div>`;
     }
 
     // Active parameter documentation
     if (parameters[activeParameter]) {
       const paramDoc = parameters[activeParameter].documentation;
       html += `<div class="cbs-param-doc">`;
-      html += `<strong>${this.escapeHTML(parameters[activeParameter].label)}</strong>: `;
+      html += `<strong>${this.escapeHTML(
+        parameters[activeParameter].label
+      )}</strong>: `;
       html += this.escapeHTML(paramDoc);
       html += `</div>`;
     }
 
-    html += '</div>';
+    html += "</div>";
 
     this.tooltip.innerHTML = html;
   }
@@ -380,8 +415,11 @@ class CBSSignature {
    */
   position() {
     // Get cursor position in pixels
-    const textBeforeCursor = this.textarea.value.substring(0, this.textarea.selectionStart);
-    const lines = textBeforeCursor.split('\n');
+    const textBeforeCursor = this.textarea.value.substring(
+      0,
+      this.textarea.selectionStart
+    );
+    const lines = textBeforeCursor.split("\n");
     const currentLine = lines.length - 1;
     const currentColumn = lines[lines.length - 1].length;
 
@@ -396,8 +434,17 @@ class CBSSignature {
     const rect = this.textarea.getBoundingClientRect();
     const charWidth = fontSize * 0.6; // Approximate monospace char width
 
-    let left = rect.left + paddingLeft + (currentColumn * charWidth) - this.textarea.scrollLeft;
-    let top = rect.top + paddingTop + (currentLine * lineHeight) - lineHeight - this.textarea.scrollTop;
+    let left =
+      rect.left +
+      paddingLeft +
+      currentColumn * charWidth -
+      this.textarea.scrollLeft;
+    let top =
+      rect.top +
+      paddingTop +
+      currentLine * lineHeight -
+      lineHeight -
+      this.textarea.scrollTop;
 
     // Keep tooltip in viewport
     const tooltipRect = this.tooltip.getBoundingClientRect();
@@ -410,19 +457,19 @@ class CBSSignature {
 
     if (top < 0) {
       // Show below cursor instead
-      top = rect.top + paddingTop + (currentLine * lineHeight) + lineHeight;
+      top = rect.top + paddingTop + currentLine * lineHeight + lineHeight;
     }
 
     this.tooltip.style.left = `${left}px`;
     this.tooltip.style.top = `${top}px`;
-    this.tooltip.style.display = 'block';
+    this.tooltip.style.display = "block";
   }
 
   /**
    * Hide signature help
    */
   hide() {
-    this.tooltip.style.display = 'none';
+    this.tooltip.style.display = "none";
     this.isVisible = false;
     this.currentSignature = null;
   }
@@ -431,15 +478,74 @@ class CBSSignature {
    * Escape HTML special characters
    */
   escapeHTML(text) {
-    const div = document.createElement('div');
+    const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /**
+   * Handle ESC key to close signature help
+   */
+  handleKeyDown(e) {
+    if (e.key === "Escape" && this.isVisible) {
+      this.hide();
+      e.preventDefault();
+    }
+  }
+
+  /**
+   * Handle clicks outside tooltip to close signature help
+   */
+  handleDocumentClick(e) {
+    if (!this.isVisible) {
+      return;
+    }
+
+    // Don't hide if clicking on the tooltip itself
+    if (this.tooltip.contains(e.target)) {
+      return;
+    }
+
+    // Don't hide if clicking on the textarea (cursor position might change)
+    // but we'll let handleCursorChange handle it
+    if (this.textarea.contains(e.target)) {
+      return;
+    }
+
+    // Clicked outside both tooltip and textarea - hide
+    this.hide();
+  }
+
+  /**
+   * Handle cursor movement to close signature help when leaving function area
+   */
+  handleCursorChange(e) {
+    if (!this.isVisible) {
+      return;
+    }
+
+    // Check if signature help is still valid at current cursor position
+    const text = this.textarea.value;
+    const cursorPos = this.textarea.selectionStart;
+    const signature = this.getSignatureHelp(text, cursorPos);
+
+    if (!signature) {
+      this.hide();
+    }
   }
 
   /**
    * Destroy signature help
    */
   destroy() {
+    // Remove event listeners
+    document.removeEventListener("keydown", this.handleKeyDown);
+    document.removeEventListener("click", this.handleDocumentClick);
+    this.textarea.removeEventListener("keyup", this.handleCursorChange);
+    this.textarea.removeEventListener("click", this.handleCursorChange);
+    this.textarea.removeEventListener("input", this.handleCursorChange);
+
+    // Remove tooltip element
     if (this.tooltip && this.tooltip.parentNode) {
       this.tooltip.parentNode.removeChild(this.tooltip);
     }
@@ -447,6 +553,6 @@ class CBSSignature {
 }
 
 // Export to global scope
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.CBSSignature = CBSSignature;
 }

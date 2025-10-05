@@ -12,6 +12,10 @@ class CBSAutocomplete {
     this.isVisible = false;
     this.triggerPosition = 0;
 
+    // Bind event handlers
+    this.handleCursorChange = this.handleCursorChange.bind(this);
+    this.handleDocumentClick = this.handleDocumentClick.bind(this);
+
     this.initialize();
   }
 
@@ -48,6 +52,12 @@ class CBSAutocomplete {
         this.insertSelected();
       }
     });
+
+    // Add event listeners for closing autocomplete
+    this.textarea.addEventListener("keyup", this.handleCursorChange);
+    this.textarea.addEventListener("click", this.handleCursorChange);
+    this.textarea.addEventListener("input", this.handleCursorChange);
+    document.addEventListener("click", this.handleDocumentClick);
   }
 
   show(trigger) {
@@ -128,7 +138,7 @@ class CBSAutocomplete {
       return a.label.localeCompare(b.label);
     });
 
-    return items.slice(0, 20); // Limit to 20 items
+    return items; // Limit to 20 items
   }
 
   generateInsertText(func) {
@@ -139,7 +149,11 @@ class CBSAutocomplete {
     }
 
     // For block functions, generate block structure
-    if (func.name.startsWith("#") || func.name.startsWith("//")) {
+    if (
+      func.name.startsWith("#") ||
+      func.name.startsWith("//") ||
+      func.name.startsWith("?")
+    ) {
       return name; // Just insert name, user can type the rest
     }
 
@@ -343,7 +357,55 @@ class CBSAutocomplete {
     return div.innerHTML;
   }
 
+  /**
+   * Handle cursor movement to close autocomplete when leaving CBS area
+   */
+  handleCursorChange(e) {
+    if (!this.isVisible) {
+      return;
+    }
+
+    // Check if we're still inside a CBS expression
+    const context = CBSParser.findCBSContext(
+      this.textarea.value,
+      this.textarea.selectionStart
+    );
+
+    if (!context || !context.isInsideCBS) {
+      this.hide();
+    }
+  }
+
+  /**
+   * Handle clicks outside dropdown to close autocomplete
+   */
+  handleDocumentClick(e) {
+    if (!this.isVisible) {
+      return;
+    }
+
+    // Don't hide if clicking on the dropdown itself
+    if (this.dropdown.contains(e.target)) {
+      return;
+    }
+
+    // Don't hide if clicking on the textarea
+    if (this.textarea.contains(e.target)) {
+      return;
+    }
+
+    // Clicked outside both dropdown and textarea - hide
+    this.hide();
+  }
+
   destroy() {
+    // Remove event listeners
+    this.textarea.removeEventListener("keyup", this.handleCursorChange);
+    this.textarea.removeEventListener("click", this.handleCursorChange);
+    this.textarea.removeEventListener("input", this.handleCursorChange);
+    document.removeEventListener("click", this.handleDocumentClick);
+
+    // Remove dropdown element
     if (this.dropdown && this.dropdown.parentNode) {
       this.dropdown.parentNode.removeChild(this.dropdown);
     }

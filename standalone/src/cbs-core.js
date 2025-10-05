@@ -1307,21 +1307,21 @@ const CBSDatabase = (function () {
   addFunction({
     name: "#if",
     description:
-      'CBS의 조건문입니다. 1과 "true"는 참이고, 그 외는 거짓입니다. (더 이상 사용되지 않음: #when 사용 권장)',
+      'CBS의 조건문입니다. 1과 "true"는 참이고, 그 외는 거짓입니다. (#when 사용 권장)',
     aliases: [],
     arguments: ["condition"],
     example:
-      "{{#if condition}}...{{/if}} (더 이상 사용되지 않음: {{#when condition}}...{{/when}} 사용 권장)",
+      "{{#if condition}}...{{/if}} ({{#when condition}}...{{/when}} 사용 권장)",
   });
 
   addFunction({
     name: "#if_pure",
     description:
-      '공백 처리를 유지하는 CBS 조건문입니다. 1과 "true"는 참이고, 그 외는 거짓입니다. (더 이상 사용되지 않음: #when::keep 사용 권장)',
+      '공백 처리를 유지하는 CBS 조건문입니다. 1과 "true"는 참이고, 그 외는 거짓입니다. (#when::keep 사용 권장)',
     aliases: [],
     arguments: ["condition"],
     example:
-      "{{#if_pure condition}}...{{/if_pure}} (더 이상 사용되지 않음: {{#when::keep::condition}}...{{/when}} 사용 권장)",
+      "{{#if_pure condition}}...{{/if_pure}} ({{#when::keep::condition}}...{{/when}} 사용 권장)",
   });
 
   addFunction({
@@ -1346,11 +1346,11 @@ const CBSDatabase = (function () {
   addFunction({
     name: "#pure",
     description:
-      "CBS 처리 없이 내용을 표시합니다. 원시 HTML이나 다른 콘텐츠를 파싱 없이 표시할 때 유용합니다. (더 이상 사용되지 않음: #puredisplay 사용 권장)",
+      "CBS 처리 없이 내용을 표시합니다. 원시 HTML이나 다른 콘텐츠를 파싱 없이 표시할 때 유용합니다. (#puredisplay 사용 권장)",
     aliases: [],
     arguments: [],
     example:
-      "{{#pure}}...{{/pure}} (더 이상 사용되지 않음: {{#puredisplay}}...{{/puredisplay}} 사용 권장)",
+      "{{#pure}}...{{/pure}} ({{#puredisplay}}...{{/puredisplay}} 사용 권장)",
   });
 
   addFunction({
